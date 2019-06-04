@@ -30,6 +30,10 @@ EXPOSE 8081
 
 ENV TZ Australia/Perth
 
+RUN apt-get install -y tzdata
+
+RUN dpkg-reconfigure -f noninteractive tzdata
+
 COPY res/entrypoint.sh /srv/entrypoint.sh
 
 RUN echo `uuidgen` > /srv/instance.uuid
