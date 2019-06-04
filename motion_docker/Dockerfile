@@ -28,6 +28,8 @@ EXPOSE 8080
 
 EXPOSE 8081
 
+ENV TZ Australia/Perth
+
 COPY res/entrypoint.sh /srv/entrypoint.sh
 
 RUN echo `uuidgen` > /srv/instance.uuid
