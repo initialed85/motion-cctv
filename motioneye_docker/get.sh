@@ -6,5 +6,5 @@ if [[ -d motioneye ]]; then
     git reset --hard
     cd ..
 else
-    git clone https://github.com/Motion-Project/motioneye.git
+    git clone https://github.com/ccrisan/motioneye.git
 fi
