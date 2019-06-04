@@ -16,5 +16,3 @@ docker run -d --restart=always --log-opt max-size=10m \
     -v /media/storage/motion:/etc/motion \
     -v /media/storage/Cameras:/srv/target_dir \
     ${IMAGE} ${2} ${3}
-
-docker rm -f ${CONTAINER}
