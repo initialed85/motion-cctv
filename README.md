@@ -1,9 +1,9 @@
 # motion-cctv
-The hopeful marriage between Motion-Project/motion and Motion-Project/motioneye
+My implementation of Motion-Project/motion in Docker, including some scripts for ease of event integration.
 
 ## On licensing
 
-My work in here is under the MIT license, so you can do with it what you will, even comercially if you like- however please note that Motion-Project/motion appears to be under under GPL-2.0 and ccrisan/motioneye is under the GPL-3.0 license.
+My work in here is under the MIT license, so you can do with it what you will, even comercially if you like- however please note that Motion-Project/motion appears to be under under GPL-2.0 license.
 
 ## `motion` (the daemon)
 
@@ -78,13 +78,3 @@ So, in the voice of the micro-manager:
 - consider the event ID and the camera ID together to be unique
 - seek backwards, and throw away `event_end` events without any `event_start`
 - make use of the `instance UUID` and `run UUID` I've included in the `event.log` to ensure you're not matching events for a now-shut-down instance of `motion`
-
-## `motioneye` (the front-end)
-
-### What's been done
-
-Nothing so far
-
-### How to use it
-
-Not sure yet
