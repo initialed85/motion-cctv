@@ -2,7 +2,7 @@ FROM ubuntu:16.04
 
 RUN apt-get update && apt-get install -y \
     autoconf automake pkgconf libtool libjpeg8-dev build-essential libzip-dev gettext libmicrohttpd-dev \
-    libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libavdevice-dev uuid-runtime
+    libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libavdevice-dev uuid-runtime git
 
 COPY motion /srv/motion
 
