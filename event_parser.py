@@ -168,11 +168,12 @@ def work(handle_missing):
         if picture is not None:
             pictures.pop(i)
         elif handle_missing:
-            error('failed to find picture for {}; will stub out'.format(movie))
+            error('failed to find picture for {}; will stub out'.format(movie.name))
             picture = get_empty_file('missing.png')
         else:
-            error('failed to find picture for {}; will try again'.format(movie))
-            raise Exception('failed to find picture for {}'.format(movie))
+            message = 'failed to find picture for {}; will try again'.format(movie.name)
+            error(message)
+            raise Exception(message)
 
         pairs += [(movie, picture)]
 
