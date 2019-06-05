@@ -32,3 +32,5 @@ If you want to run the instance in a more productionized way, I recommend you ha
 ### How to integrate with it
 
 Presently, the script `event_parser.py` looks at the contents of `target_dir` and knits a picture together in HTML form.
+
+There are no unit tests. (I know, I know!)
