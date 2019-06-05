@@ -79,7 +79,7 @@ _HTML_REPEATER = """<tr>
 <td><a href="{}">Download</a></td>
 </tr>"""
 
-File = namedtuple('File', ['created', 'modified', 'size', 'name', 'prefix'])
+File = namedtuple('File', ['created', 'modified', 'size', 'name', 'prefix', 'timestamp'])
 
 
 def _log(level, priority, message):
@@ -102,7 +102,7 @@ def error(message):
 
 
 def get_empty_file(name):
-    return File(None, None, None, name, None)
+    return File(None, None, None, name, None, None)
 
 
 def get_files():
@@ -132,11 +132,29 @@ def get_files():
         except Exception:
             file_size = None
 
-        file_obj = File(created, modified, file_size, file_name, '__'.join(file_name.split('__')[0:2]))
+        match = re.search('.*(\d\d\d\d-\d\d-\d\d_\d\d-\d\d-\d\d).*', file_name)
+        if match is None:
+            continue
 
-        files += [(created, modified, file_obj)]
+        groups = match.groups()
+        if groups is None or len(groups) == 0:
+            continue
 
-    return [x[2] for x in sorted(files)[::-1]]
+        timestamp = datetime.datetime.strptime(groups[0], '%Y-%m-%d_%H-%M-%S')
+
+        file_obj = File(
+            created,
+            modified,
+            file_size,
+            file_name, '__'.join(file_name.split('__')[0:2]),
+            timestamp
+        )
+
+        files += [file_obj]
+
+    sorted_files = sorted([(x.timestamp, x) for x in files])[::-1]
+
+    return [x[1] for x in sorted_files]
 
 
 def get_movies(files):
