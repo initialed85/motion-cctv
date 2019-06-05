@@ -2,6 +2,7 @@ import datetime
 import os
 import re
 import sys
+import time
 from collections import namedtuple
 
 _TARGET_DIR = '/media/storage/Cameras'
@@ -73,7 +74,7 @@ _HTML_REPEATER = """<tr>
 <td>{}</td>
 <td>{}</td>
 <td>{}</td>
-<td><a target="_blank" href="{}"><img src="{}" alt="{}" width="320" height="180" /></a></td>
+<td style="width: 320px";><a target="_blank" href="{}"><img src="{}" alt="{}" width="320" height="180" /></a></td>
 <td><a href="{}">Download</a></td>
 </tr>"""
 
@@ -122,71 +123,116 @@ def get_pictures(files):
     return [x for x in files if x.name.endswith('.jpg')]
 
 
-files = get_files()
+def work():
+    files = get_files()
 
-movies = get_movies(files)
+    movies = get_movies(files)
 
-pictures = get_pictures(files)
+    pictures = get_pictures(files)
 
-pairs = []
-while len(movies) > 0:
-    movie = movies.pop(0)
+    pairs = []
+    while len(movies) > 0:
+        movie = movies.pop(0)
 
-    i = None
-    picture = None
+        i = None
+        picture = None
 
-    for i, picture in enumerate(pictures):
-        if picture.prefix == movie.prefix:
+        for i, picture in enumerate(pictures):
+            if picture.prefix == movie.prefix:
+                break
+
+        if picture is None:
+            raise ValueError('failed to find picture for {}'.format(movie))
+
+        pictures.pop(i)
+
+        pairs += [(movie, picture)]
+
+    events = []
+    for movie, picture in pairs:
+        duration = movie.modified - movie.created if movie.created is not None not in [
+            movie.modified, movie.created
+        ] else 'unknown'
+
+        match = re.search(
+            '(\d+)__(\d+)__(\d\d\d\d-\d\d-\d\d_\d\d-\d\d-\d\d)__(.*)\.',
+            movie.name
+        )
+
+        if match is None:
+            raise ValueError('failed to regex parts out of {}'.format(repr(movie)))
+
+        event_id, camera_id, timestamp_str, camera_name = match.groups()
+
+        timestamp = datetime.datetime.strptime(timestamp_str, '%Y-%m-%d_%H-%M-%S')
+
+        events += [[
+            event_id,
+            camera_id,
+            timestamp,
+            duration,
+            '{} MB'.format(movie.size) if movie.size is not None else 'unknown',
+            camera_name,
+            '{}{}'.format(_BROWSE_URL_PREFIX, picture.name),
+            '{}{}'.format(_BROWSE_URL_PREFIX, picture.name),
+            picture.name,
+            '{}{}'.format(_BROWSE_URL_PREFIX, movie.name)
+        ]]
+
+    repeaters = []
+    last_timestamp = None
+    for event in events:
+        timestamp = event[2]
+        date = datetime.datetime(year=timestamp.year, month=timestamp.month, day=timestamp.day)
+
+        if last_timestamp is None:
+            repeaters += ['<tr><th colspan="8" style="background-color: silver;">{}</th></tr>'.format(
+                date.strftime('%Y-%m-%d')
+            )]
+        else:
+            last_date = datetime.datetime(year=last_timestamp.year, month=last_timestamp.month, day=last_timestamp.day)
+            if last_date < date:
+                repeaters += ['<tr><th colspan="8" style="background-color: silver;">{}</th></tr>'.format(
+                    date.strftime('%Y-%m-%d')
+                )]
+
+        last_timestamp = timestamp
+
+        repeaters += [_HTML_REPEATER.format(*event)]
+
+    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    with open(sys.argv[1], 'w') as f:
+        f.write(_HTML_TEMPLATE.format(
+            now,
+            _STYLE_SHEET,
+            now,
+            '\n\n'.join(repeaters)
+        ))
+
+
+if __name__ == '__main__':
+    success = False
+    for i in range(0, 5):
+        before = datetime.datetime.now()
+
+        try:
+            work()
+
+            success = True
+
             break
+        except Exception:
+            pass
 
-    if picture is None:
-        raise ValueError('failed to find picture for {}'.format(movie))
+        after = datetime.datetime.now()
 
-    pictures.pop(i)
+        duration = after - before
 
-    pairs += [(movie, picture)]
+        sleep = datetime.timedelta(seconds=5) - duration
 
-events = []
-for movie, picture in pairs:
-    duration = movie.modified - movie.created if movie.created is not None not in [
-        movie.modified, movie.created
-    ] else 'unknown'
+        if duration > 0:
+            time.sleep(sleep.total_seconds())
 
-    match = re.search(
-        '(\d+)__(\d+)__(\d\d\d\d-\d\d-\d\d_\d\d-\d\d-\d\d)__(.*)\.',
-        movie.name
-    )
-
-    if match is None:
-        raise ValueError('failed to regex parts out of {}'.format(repr(movie)))
-
-    event_id, camera_id, timestamp_str, camera_name = match.groups()
-
-    timestamp = datetime.datetime.strptime(timestamp_str, '%Y-%m-%d_%H-%M-%S')
-
-    events += [[
-        event_id,
-        camera_id,
-        timestamp,
-        duration,
-        '{} MB'.format(movie.size) if movie.size is not None else 'unknown',
-        camera_name,
-        '{}{}'.format(_BROWSE_URL_PREFIX, picture.name),
-        '{}{}'.format(_BROWSE_URL_PREFIX, picture.name),
-        picture.name,
-        '{}{}'.format(_BROWSE_URL_PREFIX, movie.name)
-    ]]
-
-repeaters = []
-for event in events:
-    repeaters += [_HTML_REPEATER.format(*event)]
-
-now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-with open(sys.argv[1], 'w') as f:
-    f.write(_HTML_TEMPLATE.format(
-        now,
-        _STYLE_SHEET,
-        now,
-        '\n\n'.join(repeaters)
-    ))
+    if not success:
+        raise SystemExit('all attempts failed')
