@@ -2,6 +2,7 @@ import datetime
 import os
 import re
 import sys
+import syslog
 import time
 from collections import namedtuple
 
@@ -81,6 +82,29 @@ _HTML_REPEATER = """<tr>
 File = namedtuple('File', ['created', 'modified', 'size', 'name', 'prefix'])
 
 
+def _log(level, priority, message):
+    message = repr(message).rstrip()
+
+    print('{}: {}'.format(
+        level,
+        message
+    ))
+
+    syslog.syslog(priority, message)
+
+
+def info(message):
+    _log('info', syslog.LOG_INFO, message)
+
+
+def error(message):
+    _log('error', syslog.LOG_INFO, message)
+
+
+def get_empty_file(name):
+    return File(None, None, None, name, None)
+
+
 def get_files():
     files = []
     for file_name in os.listdir(_TARGET_DIR):
@@ -123,7 +147,7 @@ def get_pictures(files):
     return [x for x in files if x.name.endswith('.jpg')]
 
 
-def work():
+def work(handle_missing):
     files = get_files()
 
     movies = get_movies(files)
@@ -141,10 +165,14 @@ def work():
             if picture.prefix == movie.prefix:
                 break
 
-        if picture is None:
-            raise ValueError('failed to find picture for {}'.format(movie))
-
-        pictures.pop(i)
+        if picture is not None:
+            pictures.pop(i)
+        elif handle_missing:
+            error('failed to find picture for {}; will stub out'.format(movie))
+            picture = get_empty_file('missing.png')
+        else:
+            error('failed to find picture for {}; will try again'.format(movie))
+            raise Exception('failed to find picture for {}'.format(movie))
 
         pairs += [(movie, picture)]
 
@@ -160,7 +188,8 @@ def work():
         )
 
         if match is None:
-            raise ValueError('failed to regex parts out of {}'.format(repr(movie)))
+            error('failed to regex parts out of {}; will skip'.format(repr(movie)))
+            continue
 
         event_id, camera_id, timestamp_str, camera_name = match.groups()
 
@@ -217,12 +246,12 @@ if __name__ == '__main__':
         before = datetime.datetime.now()
 
         try:
-            work()
+            work(not i < 4)
 
             success = True
 
             break
-        except Exception:
+        except Exception as e:
             pass
 
         after = datetime.datetime.now()
@@ -231,7 +260,7 @@ if __name__ == '__main__':
 
         sleep = datetime.timedelta(seconds=5) - duration
 
-        if duration > 0:
+        if duration > datetime.timedelta(seconds=0):
             time.sleep(sleep.total_seconds())
 
     if not success:
