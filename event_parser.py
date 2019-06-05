@@ -2,7 +2,7 @@ import datetime
 import os
 import re
 import sys
-from itertools import zip_longest
+from collections import namedtuple
 
 _TARGET_DIR = '/media/storage/Cameras'
 
@@ -73,12 +73,14 @@ _HTML_REPEATER = """<tr>
 <td>{}</td>
 <td>{}</td>
 <td>{}</td>
-<td><img src="{}" width="320" height="180" /></td>
+<td><a target="_blank" href="{}"><img src="{}" alt="{}" width="320" height="180" /></a></td>
 <td><a href="{}">Download</a></td>
 </tr>"""
 
+File = namedtuple('File', ['created', 'modified', 'size', 'name', 'prefix'])
 
-def get_movies():
+
+def get_files():
     files = []
     for file_name in os.listdir(_TARGET_DIR):
         path = os.path.join(_TARGET_DIR, file_name)
@@ -86,9 +88,6 @@ def get_movies():
             continue
 
         if file_name.startswith('.'):
-            continue
-
-        if not file_name.endswith('.mkv'):
             continue
 
         stat = os.stat(path)
@@ -108,39 +107,58 @@ def get_movies():
         except Exception:
             file_size = None
 
-        files += [
-            (
-                created,
-                modified,
-                file_size,
-                file_name,
-            )
-        ]
+        file_obj = File(created, modified, file_size, file_name, '__'.join(file_name.split('__')[0:2]))
 
-    return files
+        files += [(created, modified, file_obj)]
+
+    return [x[2] for x in sorted(files)[::-1]]
 
 
-def get_pictures():
-    return [
-        x for x in os.listdir(_TARGET_DIR) if x.endswith('.jpg') and not x.startswith('.')
-    ]
+def get_movies(files):
+    return [x for x in files if x.name.endswith('.mkv')]
 
 
-movies = get_movies()
+def get_pictures(files):
+    return [x for x in files if x.name.endswith('.jpg')]
 
-pictures = get_pictures()
+
+files = get_files()
+
+movies = get_movies(files)
+
+pictures = get_pictures(files)
+
+pairs = []
+while len(movies) > 0:
+    movie = movies.pop(0)
+
+    i = None
+    picture = None
+
+    for i, picture in enumerate(pictures):
+        if picture.prefix == movie.prefix:
+            break
+
+    if picture is None:
+        raise ValueError('failed to find picture for {}'.format(movie))
+
+    pictures.pop(i)
+
+    pairs += [(movie, picture)]
 
 events = []
-for (created, last_modified, file_size, movie), picture in zip_longest(movies, pictures):
-    duration = last_modified - created if created is not None not in [last_modified, created] else 'unknown'
+for movie, picture in pairs:
+    duration = movie.modified - movie.created if movie.created is not None not in [
+        movie.modified, movie.created
+    ] else 'unknown'
 
     match = re.search(
         '(\d+)__(\d+)__(\d\d\d\d-\d\d-\d\d_\d\d-\d\d-\d\d)__(.*)\.',
-        movie
+        movie.name
     )
 
     if match is None:
-        raise ValueError('failed to match {}'.format(repr(movie)))
+        raise ValueError('failed to regex parts out of {}'.format(repr(movie)))
 
     event_id, camera_id, timestamp_str, camera_name = match.groups()
 
@@ -151,10 +169,12 @@ for (created, last_modified, file_size, movie), picture in zip_longest(movies, p
         camera_id,
         timestamp,
         duration,
-        '{} MB'.format(file_size) if file_size is not None else 'unknown',
+        '{} MB'.format(movie.size) if movie.size is not None else 'unknown',
         camera_name,
-        '{}{}'.format(_BROWSE_URL_PREFIX, picture),
-        '{}{}'.format(_BROWSE_URL_PREFIX, movie)
+        '{}{}'.format(_BROWSE_URL_PREFIX, picture.name),
+        '{}{}'.format(_BROWSE_URL_PREFIX, picture.name),
+        picture.name,
+        '{}{}'.format(_BROWSE_URL_PREFIX, movie.name)
     ]]
 
 repeaters = []
@@ -170,4 +190,3 @@ with open(sys.argv[1], 'w') as f:
         now,
         '\n\n'.join(repeaters)
     ))
-
