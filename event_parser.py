@@ -5,7 +5,6 @@ import sys
 from itertools import zip_longest
 
 _TARGET_DIR = '/media/storage/Cameras'
-_EVENT_FILE = 'events.log'
 _BROWSE_URL_PREFIX = '/browse/'
 _STYLE_SHEET = """
 BODY {
@@ -133,10 +132,6 @@ for (created, last_modified, movie), picture in zip_longest(movies, pictures):
         '{}{}'.format(_BROWSE_URL_PREFIX, movie),
         '{}{}'.format(_BROWSE_URL_PREFIX, picture)
     ]]
-
-import pprint
-
-pprint.pprint(events, width=300)
 
 repeaters = []
 for event in events:
