@@ -13,6 +13,6 @@ docker run -d --restart=always --log-opt max-size=10m \
     --name ${CONTAINER} \
     -p 8080:8080 \
     -p 8081:8081 \
-    -v /media/storage/motion:/etc/motion \
+    -v `pwd`/configs:/etc/motion \
     -v /media/storage/Cameras:/srv/target_dir \
     ${IMAGE} ${2} ${3}
