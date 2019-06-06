@@ -56,7 +56,8 @@ _HTML_TEMPLATE = """</html>
 <th>Size</th>
 <th>Camera</th>
 <th>Screenshot</th>
-<th>Clip</th>
+<th>Downloda</th>
+<th>Watch</th>
 </tr>
 
 {}
@@ -76,6 +77,11 @@ _HTML_REPEATER = """<tr>
 <td>{}</td>
 <td style="width: 320px";><a target="_blank" href="{}"><img src="{}" alt="{}" width="320" height="180" /></a></td>
 <td><a href="{}">Download</a></td>
+<td style="width: 320px";>
+<video controls width="320">
+<source src="{}" />
+</video>
+</td>
 </tr>"""
 
 File = namedtuple('File', ['size', 'name', 'prefix', 'timestamp'])
@@ -209,6 +215,7 @@ def work(handle_missing):
             '{}{}'.format(_BROWSE_URL_PREFIX, picture.name),
             '{}{}'.format(_BROWSE_URL_PREFIX, picture.name),
             picture.name,
+            '{}{}'.format(_BROWSE_URL_PREFIX, movie.name),
             '{}{}'.format(_BROWSE_URL_PREFIX, movie.name)
         ]]
 
