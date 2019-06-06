@@ -183,13 +183,17 @@ def work(handle_missing):
 
         if picture is not None:
             pictures.pop(i)
-        elif handle_missing:
-            error('failed to find picture for {}; will stub out'.format(movie.name))
-            picture = get_empty_file('missing.png')
-        else:
+        elif not handle_missing:  # case when movie is there but picture isn't
             message = 'failed to find picture for {}; will try again'.format(movie.name)
             error(message)
             raise FailedToFindPictureError(message)
+        else:
+            error('failed to find picture for {}; will stub out'.format(movie.name))
+            picture = get_empty_file('missing.png')
+
+        if picture.timestamp is not None:  # case when movie is there but picture isn't after n tries
+            if (picture.timestamp - movie.timestamp).total_seconds() > 60 * 60:  # ditch if over an hour's difference
+                continue
 
         pairs += [(movie, picture)]
 
@@ -224,17 +228,14 @@ def work(handle_missing):
     for event in events:
         timestamp = event[2]
         date = datetime.datetime(year=timestamp.year, month=timestamp.month, day=timestamp.day)
+        last_date = datetime.datetime(
+            year=last_timestamp.year, month=last_timestamp.month, day=last_timestamp.day
+        ) if last_timestamp is not None else None
 
-        if last_timestamp is None:
+        if last_date is None or last_date > date:
             repeaters += ['<tr><th colspan="8" style="background-color: silver;">{}</th></tr>'.format(
                 date.strftime('%Y-%m-%d')
             )]
-        else:
-            last_date = datetime.datetime(year=last_timestamp.year, month=last_timestamp.month, day=last_timestamp.day)
-            if last_date < date:
-                repeaters += ['<tr><th colspan="8" style="background-color: silver;">{}</th></tr>'.format(
-                    date.strftime('%Y-%m-%d')
-                )]
 
         last_timestamp = timestamp
 
