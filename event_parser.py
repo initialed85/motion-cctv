@@ -4,6 +4,7 @@ import re
 import sys
 import syslog
 import time
+import traceback
 from collections import namedtuple
 
 _TARGET_DIR = '/media/storage/Cameras'
@@ -52,7 +53,6 @@ _HTML_TEMPLATE = """</html>
 <th>Event ID</th>
 <th>Camera ID</th>
 <th>Timestamp</th>
-<th>Duration</th>
 <th>Size</th>
 <th>Camera</th>
 <th>Screenshot</th>
@@ -74,12 +74,15 @@ _HTML_REPEATER = """<tr>
 <td>{}</td>
 <td>{}</td>
 <td>{}</td>
-<td>{}</td>
 <td style="width: 320px";><a target="_blank" href="{}"><img src="{}" alt="{}" width="320" height="180" /></a></td>
 <td><a href="{}">Download</a></td>
 </tr>"""
 
-File = namedtuple('File', ['created', 'modified', 'size', 'name', 'prefix', 'timestamp'])
+File = namedtuple('File', ['size', 'name', 'prefix', 'timestamp'])
+
+
+class FailedToFindPictureError(Exception):
+    pass
 
 
 def _log(level, priority, message):
@@ -102,7 +105,7 @@ def error(message):
 
 
 def get_empty_file(name):
-    return File(None, None, None, name, None, None)
+    return File(None, name, None, None)
 
 
 def get_files():
@@ -116,16 +119,6 @@ def get_files():
             continue
 
         stat = os.stat(path)
-
-        try:
-            created = datetime.datetime.fromtimestamp(stat.st_birthtime)
-        except Exception:
-            created = None
-
-        try:
-            modified = datetime.datetime.fromtimestamp(stat.st_mtime)
-        except Exception:
-            modified = None
 
         try:
             file_size = round(stat.st_size / 1000000, 2)
@@ -143,10 +136,9 @@ def get_files():
         timestamp = datetime.datetime.strptime(groups[0], '%Y-%m-%d_%H-%M-%S')
 
         file_obj = File(
-            created,
-            modified,
             file_size,
-            file_name, '__'.join(file_name.split('__')[0:2]),
+            file_name,
+            '__'.join(file_name.split('__')[0:2]),
             timestamp
         )
 
@@ -191,18 +183,14 @@ def work(handle_missing):
         else:
             message = 'failed to find picture for {}; will try again'.format(movie.name)
             error(message)
-            raise Exception(message)
+            raise FailedToFindPictureError(message)
 
         pairs += [(movie, picture)]
 
     events = []
     for movie, picture in pairs:
-        duration = movie.modified - movie.created if movie.created is not None not in [
-            movie.modified, movie.created
-        ] else 'unknown'
-
         match = re.search(
-            '(\d+)__(\d+)__(\d\d\d\d-\d\d-\d\d_\d\d-\d\d-\d\d)__(.*)\.',
+            '(\d+)__(\d+)__\d\d\d\d-\d\d-\d\d_\d\d-\d\d-\d\d__(.*)\.',
             movie.name
         )
 
@@ -210,15 +198,12 @@ def work(handle_missing):
             error('failed to regex parts out of {}; will skip'.format(repr(movie)))
             continue
 
-        event_id, camera_id, timestamp_str, camera_name = match.groups()
-
-        timestamp = datetime.datetime.strptime(timestamp_str, '%Y-%m-%d_%H-%M-%S')
+        event_id, camera_id, camera_name = match.groups()
 
         events += [[
             event_id,
             camera_id,
-            timestamp,
-            duration,
+            movie.timestamp,
             '{} MB'.format(movie.size) if movie.size is not None else 'unknown',
             camera_name,
             '{}{}'.format(_BROWSE_URL_PREFIX, picture.name),
@@ -271,7 +256,8 @@ if __name__ == '__main__':
 
             break
         except Exception as e:
-            pass
+            if not isinstance(e, FailedToFindPictureError):
+                error(traceback.format_exc())
 
         after = datetime.datetime.now()
 
