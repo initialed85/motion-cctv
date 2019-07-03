@@ -1,88 +1,11 @@
 import datetime
 import os
 import re
-import sys
 import syslog
-import time
-import traceback
 from collections import namedtuple
 
-_TARGET_DIR = '/media/storage/Cameras'
-
-_BROWSE_URL_PREFIX = '/browse/'
-
-_STYLE_SHEET = """
-BODY {
-    font-family: Tahoma;
-    font-size: 8pt;
-    font-weight: none;
-    text-align: center;
-}
-
-TH {
-    font-family: Tahoma;
-    font-size: 8pt;
-    font-weight: bold;
-    text-align: center;
-}
-
-TD {
-    font-family: Tahoma;
-    font-size: 8pt;
-    font-weight: none;
-    text-align: center;
-    border: 1px solid gray; 
-}
-"""
-
-_HTML_TEMPLATE = """</html>
-<head>
-<title>Events as at {}</title>
-<style type="text/css">
-{}
-</style>
-</head>
-
-<body>
-<h1>Events as at {}</h1>
-
-<center>
-<table width="90%">
-
-<tr>
-<th>Event ID</th>
-<th>Camera ID</th>
-<th>Timestamp</th>
-<th>Size</th>
-<th>Camera</th>
-<th>Screenshot</th>
-<th>Downloda</th>
-<th>Watch</th>
-</tr>
-
-{}
-
-</table>
-<center>
-
-</body>
-</html>
-"""
-
-_HTML_REPEATER = """<tr>
-<td>{}</td>
-<td>{}</td>
-<td>{}</td>
-<td>{}</td>
-<td>{}</td>
-<td style="width: 320px";><a target="_blank" href="{}"><img src="{}" alt="{}" width="320" height="180" /></a></td>
-<td><a href="{}">Download</a></td>
-<td style="width: 320px";>
-<video controls width="320">
-<source src="{}" />
-</video>
-</td>
-</tr>"""
+from config import TIMESTAMP_PATTERN, FILE_NAME_PATTERN, STYLE_SHEET, \
+    HTML_TEMPLATE, HTML_REPEATER, HTML_SEPARATOR
 
 File = namedtuple('File', ['size', 'name', 'prefix', 'timestamp'])
 
@@ -114,10 +37,10 @@ def get_empty_file(name):
     return File(None, name, None, None)
 
 
-def get_files():
+def get_files(target_dir):
     files = []
-    for file_name in os.listdir(_TARGET_DIR):
-        path = os.path.join(_TARGET_DIR, file_name)
+    for file_name in os.listdir(target_dir):
+        path = os.path.join(target_dir, file_name)
         if not os.path.isfile(path):
             continue
 
@@ -131,7 +54,7 @@ def get_files():
         except Exception:
             file_size = None
 
-        match = re.search('.*(\d\d\d\d-\d\d-\d\d_\d\d-\d\d-\d\d).*', file_name)
+        match = re.search(TIMESTAMP_PATTERN, file_name)
         if match is None:
             continue
 
@@ -163,8 +86,10 @@ def get_pictures(files):
     return [x for x in files if x.name.endswith('.jpg')]
 
 
-def work(handle_missing):
-    files = get_files()
+def parse_events(target_dir, browse_url_prefix, run_timestamp=None):
+    run_timestamp = run_timestamp if run_timestamp is not None else datetime.datetime.now()
+
+    files = get_files(target_dir)
 
     movies = get_movies(files)
 
@@ -183,12 +108,7 @@ def work(handle_missing):
 
         if picture is not None:
             pictures.pop(i)
-        elif not handle_missing:  # case when movie is there but picture isn't
-            message = 'failed to find picture for {}; will try again'.format(movie.name)
-            error(message)
-            raise FailedToFindPictureError(message)
         else:
-            error('failed to find picture for {}; will stub out'.format(movie.name))
             picture = get_empty_file('missing.png')
 
         if picture.timestamp is not None:  # case when movie is there but picture isn't after n tries
@@ -200,7 +120,7 @@ def work(handle_missing):
     events = []
     for movie, picture in pairs:
         match = re.search(
-            '(\d+)__(\d+)__\d\d\d\d-\d\d-\d\d_\d\d-\d\d-\d\d__(.*)\.',
+            FILE_NAME_PATTERN,
             movie.name
         )
 
@@ -216,11 +136,11 @@ def work(handle_missing):
             movie.timestamp,
             '{} MB'.format(movie.size) if movie.size is not None else 'unknown',
             camera_name,
-            '{}{}'.format(_BROWSE_URL_PREFIX, picture.name),
-            '{}{}'.format(_BROWSE_URL_PREFIX, picture.name),
+            '{}{}'.format(browse_url_prefix, picture.name),
+            '{}{}'.format(browse_url_prefix, picture.name),
             picture.name,
-            '{}{}'.format(_BROWSE_URL_PREFIX, movie.name),
-            '{}{}'.format(_BROWSE_URL_PREFIX, movie.name)
+            '{}{}'.format(browse_url_prefix, movie.name),
+            '{}{}'.format(browse_url_prefix, movie.name)
         ]]
 
     repeaters = []
@@ -233,48 +153,39 @@ def work(handle_missing):
         ) if last_timestamp is not None else None
 
         if last_date is None or last_date > date:
-            repeaters += ['<tr><th colspan="8" style="background-color: silver;">{}</th></tr>'.format(
+            repeaters += [HTML_SEPARATOR.format(
                 date.strftime('%Y-%m-%d')
             )]
 
         last_timestamp = timestamp
 
-        repeaters += [_HTML_REPEATER.format(*event)]
+        repeaters += [HTML_REPEATER.format(*event)]
 
-    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    run_timestamp_str = run_timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
-    with open(sys.argv[1], 'w') as f:
-        f.write(_HTML_TEMPLATE.format(
-            now,
-            _STYLE_SHEET,
-            now,
-            '\n\n'.join(repeaters)
-        ))
+    generated_html = HTML_TEMPLATE.format(
+        run_timestamp_str,
+        STYLE_SHEET,
+        run_timestamp_str,
+        '\n\n'.join(repeaters)
+    ).strip()
+
+    return generated_html
 
 
 if __name__ == '__main__':
-    success = False
-    for i in range(0, 5):
-        before = datetime.datetime.now()
+    import sys
 
-        try:
-            work(not i < 4)
+    if len(sys.argv) < 4:
+        print('python event_parse.py [target_dir] [browse_url_prefix] [output_path]')
 
-            success = True
+        sys.exit(1)
 
-            break
-        except Exception as e:
-            if not isinstance(e, FailedToFindPictureError):
-                error(traceback.format_exc())
+    target_dir = sys.argv[1]
+    browse_url_prefix = sys.argv[2]
+    output_path = sys.argv[3]
 
-        after = datetime.datetime.now()
+    html = parse_events(target_dir, browse_url_prefix)
 
-        duration = after - before
-
-        sleep = datetime.timedelta(seconds=5) - duration
-
-        if duration > datetime.timedelta(seconds=0):
-            time.sleep(sleep.total_seconds())
-
-    if not success:
-        raise SystemExit('all attempts failed')
+    with open(output_path, 'w') as f:
+        f.write(html)

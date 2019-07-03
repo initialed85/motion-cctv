@@ -11,10 +11,11 @@ CONTAINER=${IMAGE}-run${SUFFIX}
 
 docker run -it --restart=always --log-opt max-size=10m \
     --name ${CONTAINER} \
+    -p 80:80 \
     -p 8080:8080 \
     -p 8081:8081 \
     -v `pwd`/configs:/etc/motion \
-    -v `pwd`/target_dir:/srv/target_dir \
+    -v /media/storage/Cameras:/srv/target_dir \
     ${IMAGE} ${2} ${3}
 
 docker rm -f ${CONTAINER}
