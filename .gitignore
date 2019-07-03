@@ -1,4 +1,5 @@
 .idea
 .DS_Store
-motion_docker/default_configs
-motion_docker/target_dir
+__pycache__
+*.pyc
+motion/
