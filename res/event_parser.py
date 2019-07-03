@@ -175,7 +175,11 @@ def parse_events(target_dir, browse_url_prefix, run_timestamp=None):
             '\n\n'.join(repeaters)
         ).strip()
 
-        events_rows += [EVENTS_HTML_REPEATER.format(file_name, date_str)]
+        events_rows += [EVENTS_HTML_REPEATER.format(
+            file_name,
+            date_str,
+            len(repeaters)
+        )]
 
     generated_htmls['events.html'] = EVENTS_HTML_TEMPLATE.format(
         run_timestamp_str,
@@ -183,6 +187,8 @@ def parse_events(target_dir, browse_url_prefix, run_timestamp=None):
         run_timestamp_str,
         '\n\n'.join(events_rows)
     )
+
+    # print(repr(generated_htmls))
 
     return generated_htmls
 

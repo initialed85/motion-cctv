@@ -80,10 +80,26 @@ EVENTS_HTML_TEMPLATE = """</html>
 <body>
 <h1>Events as at {}</h1>
 
+<center>
+<table width="90%">
+
+<tr>
+<th>Date</th>
+<th>Number of events</th>
+</tr>
+
 {}
+
+</table>
+<center>
 
 </body>
 </html>
 """
 
-EVENTS_HTML_REPEATER = """<a target="event" href="{}">{}</a> <br />"""
+EVENTS_HTML_REPEATER = """
+<tr>
+<td><a target="event" href="{}">{}</a></td>
+<td>{}</td>
+</tr>
+"""
