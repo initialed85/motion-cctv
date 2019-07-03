@@ -2,10 +2,10 @@ import datetime
 import os
 import re
 import syslog
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
-from config import TIMESTAMP_PATTERN, FILE_NAME_PATTERN, STYLE_SHEET, \
-    HTML_TEMPLATE, HTML_REPEATER, HTML_SEPARATOR
+from config import TIMESTAMP_PATTERN, FILE_NAME_PATTERN, EVENT_HTML_REPEATER, EVENT_HTML_TEMPLATE, STYLE_SHEET, \
+    EVENTS_HTML_REPEATER, EVENTS_HTML_TEMPLATE
 
 File = namedtuple('File', ['size', 'name', 'prefix', 'timestamp'])
 
@@ -143,34 +143,48 @@ def parse_events(target_dir, browse_url_prefix, run_timestamp=None):
             '{}{}'.format(browse_url_prefix, movie.name)
         ]]
 
-    repeaters = []
-    last_timestamp = None
+    repeaters_by_date = OrderedDict()
     for event in events:
         timestamp = event[2]
-        date = datetime.datetime(year=timestamp.year, month=timestamp.month, day=timestamp.day)
-        last_date = datetime.datetime(
-            year=last_timestamp.year, month=last_timestamp.month, day=last_timestamp.day
-        ) if last_timestamp is not None else None
 
-        if last_date is None or last_date > date:
-            repeaters += [HTML_SEPARATOR.format(
-                date.strftime('%Y-%m-%d')
-            )]
+        date = datetime.datetime(
+            year=timestamp.year,
+            month=timestamp.month,
+            day=timestamp.day,
+        )
 
-        last_timestamp = timestamp
+        repeaters_by_date.setdefault(date, [])
 
-        repeaters += [HTML_REPEATER.format(*event)]
+        repeaters_by_date[date] += [EVENT_HTML_REPEATER.format(*event)]
 
     run_timestamp_str = run_timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
-    generated_html = HTML_TEMPLATE.format(
+    generated_htmls = OrderedDict()
+    events_rows = []
+    for date, repeaters in repeaters_by_date.items():
+        date_str = date.strftime('%Y-%m-%d')
+
+        file_name = 'events_{}.html'.format(date.strftime('%Y-%m-%d'))
+
+        generated_htmls[file_name] = EVENT_HTML_TEMPLATE.format(
+            date_str,
+            run_timestamp_str,
+            STYLE_SHEET,
+            date_str,
+            run_timestamp_str,
+            '\n\n'.join(repeaters)
+        ).strip()
+
+        events_rows += [EVENTS_HTML_REPEATER.format(file_name, date_str)]
+
+    generated_htmls['events.html'] = EVENTS_HTML_TEMPLATE.format(
         run_timestamp_str,
         STYLE_SHEET,
         run_timestamp_str,
-        '\n\n'.join(repeaters)
-    ).strip()
+        '\n\n'.join(events_rows)
+    )
 
-    return generated_html
+    return generated_htmls
 
 
 if __name__ == '__main__':
@@ -181,11 +195,12 @@ if __name__ == '__main__':
 
         sys.exit(1)
 
-    target_dir = sys.argv[1]
-    browse_url_prefix = sys.argv[2]
-    output_path = sys.argv[3]
+    _target_dir = sys.argv[1]
+    _browse_url_prefix = sys.argv[2]
+    _output_path = sys.argv[3]
 
-    html = parse_events(target_dir, browse_url_prefix)
+    _htmls = parse_events(_target_dir, _browse_url_prefix)
 
-    with open(output_path, 'w') as f:
-        f.write(html)
+    for _output_file, _html in _htmls.items():
+        with open(os.path.join(_output_path, _output_file), 'w') as f:
+            f.write(_html)

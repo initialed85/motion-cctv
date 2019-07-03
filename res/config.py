@@ -26,52 +26,16 @@ TD {
 }
 """
 
-# includes data heading for video player
-#
-# HTML_TEMPLATE = """</html>
-# <head>
-# <title>Events as at {}</title>
-# <style type="text/css">
-# {}
-# </style>
-# </head>
-#
-# <body>
-# <h1>Events as at {}</h1>
-#
-# <center>
-# <table width="90%">
-#
-# <tr>
-# <th>Event ID</th>
-# <th>Camera ID</th>
-# <th>Timestamp</th>
-# <th>Size</th>
-# <th>Camera</th>
-# <th>Screenshot</th>
-# <th>Download</th>
-# <th>Watch</th>
-# </tr>
-#
-# {}
-#
-# </table>
-# <center>
-#
-# </body>
-# </html>
-# """
-
-HTML_TEMPLATE = """</html>
+EVENT_HTML_TEMPLATE = """</html>
 <head>
-<title>Events as at {}</title>
+<title>Events for {} as at {}</title>
 <style type="text/css">
 {}
 </style>
 </head>
 
 <body>
-<h1>Events as at {}</h1>
+<h1>Events for {} as at {}</h1>
 
 <center>
 <table width="90%">
@@ -95,24 +59,7 @@ HTML_TEMPLATE = """</html>
 </html>
 """
 
-# includes data column for video player
-#
-# HTML_REPEATER = """<tr>
-# <td>{}</td>
-# <td>{}</td>
-# <td>{}</td>
-# <td>{}</td>
-# <td>{}</td>
-# <td style="width: 320px";><a target="_blank" href="{}"><img src="{}" alt="{}" width="320" height="180" /></a></td>
-# <td><a href="{}">Download</a></td>
-# <td style="width: 320px";>
-# <video controls width="320">
-# <source src="{}" />
-# </video>
-# </td>
-# </tr>"""
-
-HTML_REPEATER = """<tr>
+EVENT_HTML_REPEATER = """<tr>
 <td>{}</td>
 <td>{}</td>
 <td>{}</td>
@@ -122,4 +69,21 @@ HTML_REPEATER = """<tr>
 <td><a href="{}">Download</a></td>
 </tr>"""
 
-HTML_SEPARATOR = '<tr><th colspan="8" style="background-color: silver;">{}</th></tr>'
+EVENTS_HTML_TEMPLATE = """</html>
+<head>
+<title>Events as at {}</title>
+<style type="text/css">
+{}
+</style>
+</head>
+
+<body>
+<h1>Events as at {}</h1>
+
+{}
+
+</body>
+</html>
+"""
+
+EVENTS_HTML_REPEATER = """<a target="event" href="{}">{}</a> <br />"""
