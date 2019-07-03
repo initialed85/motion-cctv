@@ -4,7 +4,7 @@ ENV TZ Australia/Perth
 
 ENV TARGET_DIR /srv/target_dir
 
-ENV OUTPUT_PATH /srv/root/events.html
+ENV OUTPUT_PATH /srv/root/
 
 ENV BROWSE_URL_PREFIX /browse/
 
