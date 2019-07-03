@@ -78,7 +78,7 @@ EVENTS_HTML_TEMPLATE = """</html>
 </head>
 
 <body>
-<h1>Events as at {}</h1>
+<h2>Events as at {}</h2>
 
 <center>
 <table width="90%">
