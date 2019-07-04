@@ -71,7 +71,7 @@ EVENT_HTML_REPEATER = """<tr>
 
 EVENTS_HTML_TEMPLATE = """</html>
 <head>
-<title>Events as at {}</title>
+<title>All events as at {}</title>
 <style type="text/css">
 {}
 </style>
@@ -85,7 +85,7 @@ EVENTS_HTML_TEMPLATE = """</html>
 
 <tr>
 <th>Date</th>
-<th>Number of events</th>
+<th>Events</th>
 </tr>
 
 {}
