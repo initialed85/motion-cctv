@@ -188,7 +188,7 @@ def parse_events(target_dir, browse_url_prefix, run_timestamp=None):
         '\n\n'.join(events_rows)
     )
 
-    print(repr(generated_htmls))
+    # print(repr(generated_htmls))
 
     return generated_htmls
 
