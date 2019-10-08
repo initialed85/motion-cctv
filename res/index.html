@@ -20,7 +20,7 @@
     <script>
         function request(endpoint, action) {
             let http = new XMLHttpRequest();
-            http.open("GET", ":1880/" + endpoint + "/" + action);
+            http.open("GET", window.location.origin + ":1880/" + endpoint + "/" + action);
             http.send();
         }
     </script>
