@@ -4,7 +4,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>CCTV</title>
+    <title>Home</title>
 
     <style type="text/css">
 
@@ -17,20 +17,112 @@
 
     </style>
 
+    <script>
+        function request(endpoint, action) {
+            let http = new XMLHttpRequest();
+            http.open("GET", ":1880/" + endpoint + "/" + action);
+            http.send();
+        }
+    </script>
+
 </head>
 
 <body>
 
 <h1>CCTV</h1>
 
-<h2>
-    <a target="stream" href="/motion/">Stream</a> <br/>
-    <a target="browse" href="/browse/">Browse</a> <br/>
-</h2>
+<center>
+    <table>
 
-<br/>
+        <tr>
+            <th>Aircon</th>
+            <td>
+                <input type="button" value="On" onclick="request('aircon', 'on');"/>
+                <input type="button" value="Off" onclick="request('aircon', 'off');"/>
+            </td>
+        </tr>
 
-<iframe name="events" style="width: 320px; height: 512px;" src="events.html"></iframe>
+        <tr>
+            <th>Heater</th>
+            <td>
+                <input type="button" value="On" onclick="request('heater', 'on');"/>
+                <input type="button" value="Off" onclick="request('heater', 'off');"/>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Living room lights</th>
+            <td>
+                <input type="button" value="On" onclick="request('lights/living-room', 'on');"/>
+                <input type="button" value="Off" onclick="request('lights/living-room', 'off');"/>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Bedroom lights</th>
+            <td>
+                <input type="button" value="On" onclick="request('lights/bedroom', 'on');"/>
+                <input type="button" value="Off" onclick="request('lights/bedroom', 'off');"/>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Front yard lights</th>
+            <td>
+                <input type="button" value="On" onclick="request('lights/front-yard', 'on');"/>
+                <input type="button" value="Off" onclick="request('lights/front-yard', 'off');"/>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Backyard lights</th>
+            <td>
+                <input type="button" value="On" onclick="request('lights/backyard', 'on');"/>
+                <input type="button" value="Off" onclick="request('lights/backyard', 'off');"/>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Left sprinklers</th>
+            <td>
+                <input type="button" value="On" onclick="request('sprinklers/2', 'on');"/>
+                <input type="button" value="Off" onclick="request('sprinklers/2', 'off');"/>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Right sprinklers</th>
+            <td>
+                <input type="button" value="On" onclick="request('sprinklers/3', 'on');"/>
+                <input type="button" value="Off" onclick="request('sprinklers/3', 'off');"/>
+            </td>
+        </tr>
+
+        <tr>
+            <th colspan="2" style="font-size: 4pt;">&nbsp;</th>
+        </tr>
+
+        <tr>
+            <th colspan="2">
+                <iframe name="events" style="width: 320px; height: 512px;" src="events.html"></iframe>
+            </th>
+        </tr>
+
+        <tr>
+            <th colspan="2">
+                <a target="stream" href="/motion/">Stream</a>
+                -
+                <a target="browse" href="/browse/">Browse</a> <br/>
+            </th>
+        </tr>
+
+        <tr>
+            <th colspan="2">
+            </th>
+        </tr>
+
+    </table>
+</center>
 
 </body>
 
