@@ -57,6 +57,10 @@ VOLUME /etc/motion
 
 VOLUME /srv/target_dir
 
+VOLUME /etc/ssl/private/nginx-selfsigned.key
+
+VOLUME /etc/ssl/private/nginx-selfsigned.crt
+
 EXPOSE 80
 
 EXPOSE 443
