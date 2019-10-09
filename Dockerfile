@@ -1,31 +1,11 @@
 FROM ubuntu:16.04
 
-ENV TZ Australia/Perth
-
-ENV TARGET_DIR /srv/target_dir
-
-ENV OUTPUT_PATH /srv/root/
-
-ENV BROWSE_URL_PREFIX /browse/
-
-ENV WEB_USERNAME cctv
-
-ENV WEB_PASSWORD cctv123!@#
-
-ENV COUNTRY AU
-
-ENV STATE Western Australia
-
-ENV LOCALE Perth
-
-ENV ORGANIZATION Home
-
-ENV COMMON_NAME motion-cctv
-
 RUN apt-get update && apt-get install -y \
     autoconf automake pkgconf libtool libjpeg8-dev build-essential libzip-dev gettext libmicrohttpd-dev \
     libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libavdevice-dev git tzdata nginx supervisor \
     logrotate apache2-utils openssl autopoint
+
+ENV TZ Australia/Perth
 
 RUN dpkg-reconfigure -f noninteractive tzdata
 
@@ -47,12 +27,11 @@ RUN cp -frv /etc/motion /srv/default_etc_motion
 
 RUN groupadd syslog
 
-RUN openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-    -subj "/C=${COUNTRY}/ST=${STATE}/L=${LOCALE}/O=${ORGANIZATION}/CN=${COMMON_NAME}" \
-    -keyout /etc/ssl/private/nginx-selfsigned.key \
-    -out /etc/ssl/certs/nginx-selfsigned.crt
-
 RUN useradd nginx
+
+ENV WEB_USERNAME cctv
+
+ENV WEB_PASSWORD cctv123!@#
 
 RUN htpasswd -c -b /srv/nginx.htpasswd ${WEB_USERNAME} ${WEB_PASSWORD}
 
@@ -70,6 +49,10 @@ COPY res/nginx.conf /etc/nginx/nginx.conf
 
 COPY res/index.html /srv/root/index.html
 
+COPY res/nginx-selfsigned.key /etc/ssl/private/nginx-selfsigned.key
+
+COPY res/nginx-selfsigned.crt /etc/ssl/private/nginx-selfsigned.crt
+
 VOLUME /etc/motion
 
 VOLUME /srv/target_dir
@@ -81,5 +64,11 @@ EXPOSE 443
 EXPOSE 8080
 
 EXPOSE 8081
+
+ENV TARGET_DIR /srv/target_dir
+
+ENV OUTPUT_PATH /srv/root/
+
+ENV BROWSE_URL_PREFIX /browse/
 
 CMD supervisord -n -c /etc/supervisor/supervisord.conf
