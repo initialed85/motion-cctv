@@ -14,6 +14,7 @@ docker rm -f ${CONTAINER} 2>&1>/dev/null
 docker run -d --restart=always --log-opt max-size=10m \
     --name ${CONTAINER} \
     -p 80:80 \
+    -p 443:443 \
     -p 8080:8080 \
     -p 8081:8081 \
     -v `pwd`/configs:/etc/motion \
