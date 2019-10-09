@@ -51,7 +51,7 @@ COPY res/index.html /srv/root/index.html
 
 COPY res/nginx-selfsigned.key /etc/ssl/private/nginx-selfsigned.key
 
-COPY res/nginx-selfsigned.crt /etc/ssl/private/nginx-selfsigned.crt
+COPY res/nginx-selfsigned.crt /etc/ssl/certs/nginx-selfsigned.crt
 
 VOLUME /etc/motion
 
