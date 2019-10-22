@@ -21,16 +21,59 @@
     </style>
 
     <script>
-        function request(endpoint, action) {
+        let endpoints = [
+            "aircon",
+            "heater",
+            "lights/living-room",
+            "lights/bedroom",
+            "lights/front-yard",
+            "lights/back-yard",
+            "sprinklers/2",
+            "sprinklers/3"
+        ];
+
+        function requestNodeRed(endpoint, action) {
             let http = new XMLHttpRequest();
             http.open("GET", window.location.origin + "/node-red/" + endpoint + "/" + action);
             http.send();
         }
+
+        function requestMqttHttpAndUpdateElement(endpoint) {
+            let http = new XMLHttpRequest();
+            http.open("GET", window.location.origin + "/http-mqtt/" + endpoint);
+            http.send();
+
+            http.onreadystatechange = function () {
+                if (this.readyState === 4 && this.status === 200) {
+                    let data = JSON.parse(http.responseText);
+
+                    let element = document.getElementById(endpoint);
+
+                    if (data.payload === "1") {
+                        element.style.backgroundColor = "lime";
+                    } else if (data.payload === "0") {
+                        element.style.backgroundColor = "gray";
+                    } else {
+                        element.style.backgroundColor = "gray";
+                    }
+                }
+            }
+        }
+
+        function update() {
+            endpoints.forEach(function (item, _) {
+                requestMqttHttpAndUpdateElement(item);
+            });
+        }
+
+        window.setInterval(update, 1000);
     </script>
 </head>
 
-<body>
+<body onload="update()">
 <h1>Home</h1>
+
+<input type="button" value="Update" onclick="update();"/>
 
 <center>
     <table>
@@ -38,9 +81,10 @@
             <th>Aircon</th>
             <td>
                 <input type="button" value="On" style="background-color: lightgreen;"
-                       onclick="request('aircon', 'on');"/>
+                       onclick="requestNodeRed('aircon', 'on');"/>
                 <input type="button" value="Off" style="background-color: lightcoral;"
-                       onclick="request('aircon', 'off');"/>
+                       onclick="requestNodeRed('aircon', 'off');"/>
+                <input id="aircon" type="button" value=" " style="background-color: gray;" disabled/>
             </td>
         </tr>
 
@@ -48,9 +92,10 @@
             <th>Heater</th>
             <td>
                 <input type="button" value="On" style="background-color: lightgreen;"
-                       onclick="request('heater', 'on');"/>
+                       onclick="requestNodeRed('heater', 'on');"/>
                 <input type="button" value="Off" style="background-color: lightcoral;"
-                       onclick="request('heater', 'off');"/>
+                       onclick="requestNodeRed('heater', 'off');"/>
+                <input id="heater" type="button" value=" " style="background-color: gray;" disabled/>
             </td>
         </tr>
 
@@ -58,9 +103,10 @@
             <th>Living room lights</th>
             <td>
                 <input type="button" value="On" style="background-color: lightgreen;"
-                       onclick="request('lights/living-room', 'on');"/>
+                       onclick="requestNodeRed('lights/living-room', 'on');"/>
                 <input type="button" value="Off" style="background-color: lightcoral;"
-                       onclick="request('lights/living-room', 'off');"/>
+                       onclick="requestNodeRed('lights/living-room', 'off');"/>
+                <input id="lights/living-room" type="button" value=" " style="background-color: gray;" disabled/>
             </td>
         </tr>
 
@@ -68,9 +114,10 @@
             <th>Bedroom lights</th>
             <td>
                 <input type="button" value="On" style="background-color: lightgreen;"
-                       onclick="request('lights/bedroom', 'on');"/>
+                       onclick="requestNodeRed('lights/bedroom', 'on');"/>
                 <input type="button" value="Off" style="background-color: lightcoral;"
-                       onclick="request('lights/bedroom', 'off');"/>
+                       onclick="requestNodeRed('lights/bedroom', 'off');"/>
+                <input id="lights/bedroom" type="button" value=" " style="background-color: gray;" disabled/>
             </td>
         </tr>
 
@@ -78,19 +125,21 @@
             <th>Front yard lights</th>
             <td>
                 <input type="button" value="On" style="background-color: lightgreen;"
-                       onclick="request('lights/front-yard', 'on');"/>
+                       onclick="requestNodeRed('lights/front-yard', 'on');"/>
                 <input type="button" value="Off" style="background-color: lightcoral;"
-                       onclick="request('lights/front-yard', 'off');"/>
+                       onclick="requestNodeRed('lights/front-yard', 'off');"/>
+                <input id="lights/front-yard" type="button" value=" " style="background-color: gray;" disabled/>
             </td>
         </tr>
 
         <tr>
-            <th>Backyard lights</th>
+            <th>Back yard lights</th>
             <td>
                 <input type="button" value="On" style="background-color: lightgreen;"
-                       onclick="request('lights/backyard', 'on');"/>
+                       onclick="requestNodeRed('lights/back-yard', 'on');"/>
                 <input type="button" value="Off" style="background-color: lightcoral;"
-                       onclick="request('lights/backyard', 'off');"/>
+                       onclick="requestNodeRed('lights/back-yard', 'off');"/>
+                <input id="lights/back-yard" type="button" value=" " style="background-color: gray;" disabled/>
             </td>
         </tr>
 
@@ -98,9 +147,10 @@
             <th>Left sprinklers</th>
             <td>
                 <input type="button" value="On" style="background-color: lightgreen;"
-                       onclick="request('sprinklers/2', 'on');"/>
+                       onclick="requestNodeRed('sprinklers/2', 'on');"/>
                 <input type="button" value="Off" style="background-color: lightcoral;"
-                       onclick="request('sprinklers/2', 'off');"/>
+                       onclick="requestNodeRed('sprinklers/2', 'off');"/>
+                <input id="sprinklers/2" type="button" value=" " style="background-color: gray;" disabled/>
             </td>
         </tr>
 
@@ -108,9 +158,10 @@
             <th>Right sprinklers</th>
             <td>
                 <input type="button" value="On" style="background-color: lightgreen;"
-                       onclick="request('sprinklers/3', 'on');"/>
+                       onclick="requestNodeRed('sprinklers/3', 'on');"/>
                 <input type="button" value="Off" style="background-color: lightcoral;"
-                       onclick="request('sprinklers/3', 'off');"/>
+                       onclick="requestNodeRed('sprinklers/3', 'off');"/>
+                <input id="sprinklers/3" type="button" value=" " style="background-color: gray;" disabled/>
             </td>
         </tr>
 
