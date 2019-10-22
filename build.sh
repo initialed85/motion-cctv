@@ -3,6 +3,9 @@
 TAG=motion-cctv
 
 docker build -t ${TAG} .
+if [[ ${?} -ne 0 ]]; then
+  exit 1
+fi
 
 docker run -d --name ${TAG}-build ${TAG} tail -F /dev/null
 
